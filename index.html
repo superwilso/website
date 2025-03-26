@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello :)</title>
+    <title>Drawing App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        
         body, html {
             margin: 0;
             padding: 0;
@@ -14,18 +13,14 @@
             width: 100%;
             height: 100%;
             transition: background-color 0.3s, color 0.3s;
+            font-family: Arial, sans-serif;
         }
        
-        
         #drawing-canvas {
             display: block;
             background-color: white;
             touch-action: none;
             transition: background-color 0.3s;
-        }
-
-        body.dark #drawing-canvas {
-            background-color: #202225;
         }
 
         .controls {
@@ -35,6 +30,7 @@
             z-index: 1000;
             display: flex;
             gap: 10px;
+            align-items: center;
         }
 
         .btn {
@@ -46,72 +42,190 @@
             border-radius: 50%;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: background-color 0.3s, transform 0.2s;
+            position: relative;
         }
 
         .btn:hover {
             transform: scale(1.1);
         }
 
-        body.dark .btn {
-            background-color: rgba(50, 50, 55, 0.7);
-        }
-
-        body.dark .darkmode .light,
-        body:not(.dark) .darkmode .dark {
+        .background-dropdown {
             display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 250px;
+            margin-top: 10px;
         }
 
-        .light {
-            color: #f5a623;
+        .background-dropdown.active {
+            display: block;
         }
 
-        .dark {
-            color: #8a85ff;
+        .background-color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
         }
 
-        .export-btn {
-            color: #4CAF50;
+        .background-color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
         }
 
-        body.dark .export-btn {
-            color: #8BC34A;
+        .background-color-option:hover {
+            transform: scale(1.1);
         }
 
-        
-        #export-canvas {
+        .background-color-option.selected {
+            border-color: white;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
+        }
+
+        .custom-background-color-input {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .pen-dropdown {
             display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 250px;
+            margin-top: 10px;
+        }
+
+        .pen-dropdown.active {
+            display: block;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: white;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
+        }
+
+        .custom-color-input {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .thickness-slider {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .thickness-preview {
+            width: 100%;
+            height: 20px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .thickness-preview-line {
+            background-color: black;
+        }
+
+        .undo-redo-btn {
+            color: #007bff;
+        }
+
+        .rubber-btn {
+            color: #FF5722;
         }
     </style>
 </head>
 <body>
     <div class="controls">
-        <div class="btn darkmode">
-            <div class="light fas fa-sun"></div>
-            <div class="dark fas fa-moon"></div>
+        <div class="btn background-settings-btn fas fa-palette">
+            <div class="background-dropdown">
+                <div class="background-color-grid">
+                    <div class="background-color-option" data-color="white" style="background-color: white;"></div>
+                    <div class="background-color-option" data-color="lightgray" style="background-color: lightgray;"></div>
+                    <div class="background-color-option" data-color="lightblue" style="background-color: lightblue;"></div>
+                    <div class="background-color-option" data-color="lightgreen" style="background-color: lightgreen;"></div>
+                    <div class="background-color-option" data-color="pink" style="background-color: pink;"></div>
+                </div>
+                <input type="color" class="custom-background-color-input" value="#FFFFFF">
+            </div>
         </div>
-        <div class="btn export-btn fas fa-download"></div>
+        <div class="btn pen-settings-btn fas fa-pen">
+            <div class="pen-dropdown">
+                <div class="color-grid">
+                    <div class="color-option" data-color="black" style="background-color: black;"></div>
+                    <div class="color-option" data-color="red" style="background-color: red;"></div>
+                    <div class="color-option" data-color="blue" style="background-color: blue;"></div>
+                    <div class="color-option" data-color="green" style="background-color: green;"></div>
+                    <div class="color-option" data-color="purple" style="background-color: purple;"></div>
+                </div>
+                <input type="color" class="custom-color-input" value="#000000">
+                <input type="range" min="1" max="20" value="5" class="thickness-slider">
+                <div class="thickness-preview">
+                    <div class="thickness-preview-line"></div>
+                </div>
+            </div>
+        </div>
+        <div class="btn undo-redo-btn fas fa-undo"></div>
+        <div class="btn undo-redo-btn fas fa-redo"></div>
+        <div class="btn rubber-btn fas fa-eraser"></div>
     </div>
     <canvas id="drawing-canvas"></canvas>
-    <canvas id="export-canvas"></canvas>
    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function(){
             const canvas = document.getElementById('drawing-canvas');
             const ctx = canvas.getContext('2d');
-            const exportCanvas = document.getElementById('export-canvas');
-            const exportCtx = exportCanvas.getContext('2d');
             let isDrawing = false;
             let lastX = 0;
             let lastY = 0;
             let penColor = 'black';
+            let penThickness = 5;
+            let backgroundColor = 'white';
             
             let drawingData = [];
+            let redoData = [];
             let currentPath = [];
            
             function resizeCanvas() {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
+                canvas.style.backgroundColor = backgroundColor;
                 redrawCanvas();
             }
            
@@ -119,32 +233,135 @@
            
             window.addEventListener('resize', resizeCanvas);
 
-            $(".darkmode").click(function(){
-                $("body").toggleClass("dark");
-                
-                if($("body").hasClass("dark")) {
-                    penColor = 'white';
-                } else {
-                    penColor = 'black';
-                }
-                
-                redrawCanvas();
+            // Background settings button toggle
+            $(".background-settings-btn").click(function(e){
+                e.stopPropagation();
+                $(".background-dropdown").toggleClass("active");
             });
 
-            $(".export-btn").click(function(){
-                exportBinaryImage();
+            // Pen settings button toggle
+            $(".pen-settings-btn").click(function(e){
+                e.stopPropagation();
+                $(".pen-dropdown").toggleClass("active");
+            });
+
+            // Close dropdowns when clicking outside
+            $(document).click(function(e){
+                if (!$(e.target).closest('.background-settings-btn').length) {
+                    $(".background-dropdown").removeClass("active");
+                }
+                if (!$(e.target).closest('.pen-settings-btn').length) {
+                    $(".pen-dropdown").removeClass("active");
+                }
+            });
+
+            // Background color selection
+            $(".background-color-option").click(function(){
+                $(".background-color-option").removeClass("selected");
+                $(this).addClass("selected");
+                
+                backgroundColor = $(this).data('color');
+                canvas.style.backgroundColor = backgroundColor;
+                
+                // Update custom color input
+                $(".custom-background-color-input").val(
+                    backgroundColor === 'white' ? '#FFFFFF' :
+                    backgroundColor === 'lightgray' ? '#D3D3D3' :
+                    backgroundColor === 'lightblue' ? '#ADD8E6' :
+                    backgroundColor === 'lightgreen' ? '#90EE90' :
+                    backgroundColor === 'pink' ? '#FFC0CB' : '#FFFFFF'
+                );
+            });
+
+            // Custom background color input
+            $(".custom-background-color-input").on('input', function(){
+                $(".background-color-option").removeClass("selected");
+                backgroundColor = $(this).val();
+                canvas.style.backgroundColor = backgroundColor;
+            });
+
+            // Initially select white background
+            $(".background-color-option[data-color='white']").addClass("selected");
+
+            // Color selection
+            $(".color-option").click(function(){
+                $(".color-option").removeClass("selected");
+                $(this).addClass("selected");
+                
+                penColor = $(this).data('color');
+                
+                // Update custom color input
+                $(".custom-color-input").val(
+                    penColor === 'black' ? '#000000' :
+                    penColor === 'red' ? '#FF0000' :
+                    penColor === 'blue' ? '#0000FF' :
+                    penColor === 'green' ? '#00FF00' :
+                    penColor === 'purple' ? '#800080' : '#000000'
+                );
+                
+                updateThicknessPreview();
+            });
+
+            // Custom color input
+            $(".custom-color-input").on('input', function(){
+                $(".color-option").removeClass("selected");
+                penColor = $(this).val();
+                updateThicknessPreview();
+            });
+
+            // Thickness slider
+            $(".thickness-slider").on('input', function(){
+                penThickness = parseInt($(this).val());
+                updateThicknessPreview();
+            });
+
+            // Update thickness preview
+            function updateThicknessPreview() {
+                const previewLine = $(".thickness-preview-line");
+                previewLine.css({
+                    height: `${penThickness}px`,
+                    backgroundColor: penColor
+                });
+            }
+
+            // Initially select black color and set up preview
+            $(".color-option[data-color='black']").addClass("selected");
+            updateThicknessPreview();
+
+            // Undo functionality
+            $(".fa-undo").click(function(){
+                if (drawingData.length > 0) {
+                    redoData.push(drawingData.pop());
+                    redrawCanvas();
+                }
+            });
+
+            // Redo functionality
+            $(".fa-redo").click(function(){
+                if (redoData.length > 0) {
+                    drawingData.push(redoData.pop());
+                    redrawCanvas();
+                }
+            });
+
+            // Eraser functionality
+            $(".rubber-btn").click(function(){
+                penColor = backgroundColor;
+                $(".color-option").removeClass("selected");
+                updateThicknessPreview();
             });
             
             function redrawCanvas() {
+                canvas.style.backgroundColor = backgroundColor;
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
                 drawingData.forEach(path => {
                     if (path.length < 2) return;
                     
-                    ctx.lineWidth = 5;
+                    ctx.lineWidth = path.thickness;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
-                    ctx.strokeStyle = $("body").hasClass("dark") ? 'white' : 'black';
+                    ctx.strokeStyle = path.color;
                     
                     ctx.beginPath();
                     ctx.moveTo(path[0].x, path[0].y);
@@ -155,127 +372,6 @@
                     
                     ctx.stroke();
                 });
-            }
-
-            function exportBinaryImage() {
-                const bounds = findDrawingBounds();
-                if (!bounds) {
-                    alert("No drawing found to export.");
-                    return;
-                }
-                
-                const padding = 30;
-                bounds.minX = Math.max(0, bounds.minX - padding);
-                bounds.minY = Math.max(0, bounds.minY - padding);
-                bounds.maxX = Math.min(canvas.width, bounds.maxX + padding);
-                bounds.maxY = Math.min(canvas.height, bounds.maxY + padding);
-                
-                const width = bounds.maxX - bounds.minX;
-                const height = bounds.maxY - bounds.minY;
-                
-
-                const maxDimension = 128;
-                const aspectRatio = width / height;
-                
-                let exportWidth, exportHeight;
-                if (width > height) {
-                    exportWidth = maxDimension;
-                    exportHeight = Math.round(maxDimension / aspectRatio);
-                } else {
-                    exportHeight = maxDimension;
-                    exportWidth = Math.round(maxDimension * aspectRatio);
-                }
-                
-                exportCanvas.width = exportWidth;
-                exportCanvas.height = exportHeight;
-                
-                exportCtx.fillStyle = "white";
-                exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-                
-                exportCtx.save();
-                
-
-                exportCtx.scale(exportCanvas.width / width, exportCanvas.height / height);
-                exportCtx.translate(-bounds.minX, -bounds.minY);
-                
-
-                exportCtx.lineCap = 'round';
-                exportCtx.lineJoin = 'round';
-                exportCtx.strokeStyle = 'black';
-                
-                // Calculate appropriate line thickness based on canvas size
-                // This ensures lines remain visible when scaled down
-                const scaleFactor = Math.min(exportCanvas.width / width, exportCanvas.height / height);
-                const lineThickness = Math.max(1, 5 * scaleFactor); // Base on original 5px thickness
-                exportCtx.lineWidth = lineThickness;
-                
-                // Draw all paths
-                drawingData.forEach(path => {
-                    if (path.length < 2) return;
-                    
-                    exportCtx.beginPath();
-                    exportCtx.moveTo(path[0].x, path[0].y);
-                    
-                    for (let i = 1; i < path.length; i++) {
-                        exportCtx.lineTo(path[i].x, path[i].y);
-                    }
-                    
-                    exportCtx.stroke();
-                });
-                
-                exportCtx.restore();
-                
-                // Apply proper binary thresholding
-                const imageData = exportCtx.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
-                const data = imageData.data;
-                const threshold = 240; // Higher threshold to better preserve thin lines
-                
-                for (let i = 0; i < data.length; i += 4) {
-                    // Check if pixel is not white
-                    if (data[i] < threshold || data[i+1] < threshold || data[i+2] < threshold) {
-                        // Make it pure black
-                        data[i] = 0;     // R
-                        data[i+1] = 0;   // G
-                        data[i+2] = 0;   // B
-                    } else {
-                        // Make it pure white
-                        data[i] = 255;   // R
-                        data[i+1] = 255; // G
-                        data[i+2] = 255; // B
-                    }
-                    // Keep alpha at full opacity
-                    data[i+3] = 255;     // A
-                }
-                
-                exportCtx.putImageData(imageData, 0, 0);
-                
-                // Get data URL and trigger download
-                const dataUrl = exportCanvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = 'drawing.png';
-                link.href = dataUrl;
-                link.click();
-            }
-
-            // Function to find the bounds of the drawing
-            function findDrawingBounds() {
-                if (drawingData.length === 0) return null;
-
-                let minX = Infinity;
-                let minY = Infinity;
-                let maxX = -Infinity;
-                let maxY = -Infinity;
-
-                drawingData.forEach(path => {
-                    path.forEach(point => {
-                        minX = Math.min(minX, point.x);
-                        minY = Math.min(minY, point.y);
-                        maxX = Math.max(maxX, point.x);
-                        maxY = Math.max(maxY, point.y);
-                    });
-                });
-
-                return { minX, minY, maxX, maxY };
             }
            
             function startDrawing(e) {
@@ -309,7 +405,7 @@
                 const currentX = getX(e) - rect.left;
                 const currentY = getY(e) - rect.top;
                
-                ctx.lineWidth = 5;
+                ctx.lineWidth = penThickness;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 ctx.strokeStyle = penColor;
@@ -330,7 +426,13 @@
                 if (isDrawing) {
                     // End the current path and save it
                     if (currentPath.length > 1) {
+                        // Attach color and thickness to the path
+                        currentPath.color = penColor;
+                        currentPath.thickness = penThickness;
                         drawingData.push(currentPath);
+                        
+                        // Clear redo stack when a new drawing is made
+                        redoData = [];
                     }
                     currentPath = [];
                 }
