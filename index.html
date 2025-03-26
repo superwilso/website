@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello :)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            transition: background-color 0.3s, color 0.3s;
+        }
+       
+        
+        #drawing-canvas {
+            display: block;
+            background-color: white;
+            touch-action: none;
+            transition: background-color 0.3s;
+        }
+
+        body.dark #drawing-canvas {
+            background-color: #202225;
+        }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+        }
+
+        body.dark .btn {
+            background-color: rgba(50, 50, 55, 0.7);
+        }
+
+        body.dark .darkmode .light,
+        body:not(.dark) .darkmode .dark {
+            display: none;
+        }
+
+        .light {
+            color: #f5a623;
+        }
+
+        .dark {
+            color: #8a85ff;
+        }
+
+        .export-btn {
+            color: #4CAF50;
+        }
+
+        body.dark .export-btn {
+            color: #8BC34A;
+        }
+
+        
+        #export-canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div class="btn darkmode">
+            <div class="light fas fa-sun"></div>
+            <div class="dark fas fa-moon"></div>
+        </div>
+        <div class="btn export-btn fas fa-download"></div>
+    </div>
+    <canvas id="drawing-canvas"></canvas>
+    <canvas id="export-canvas"></canvas>
+   
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const canvas = document.getElementById('drawing-canvas');
+            const ctx = canvas.getContext('2d');
+            const exportCanvas = document.getElementById('export-canvas');
+            const exportCtx = exportCanvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+            let penColor = 'black';
+            
+            let drawingData = [];
+            let currentPath = [];
+           
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                redrawCanvas();
+            }
+           
+            resizeCanvas();
+           
+            window.addEventListener('resize', resizeCanvas);
+
+            $(".darkmode").click(function(){
+                $("body").toggleClass("dark");
+                
+                if($("body").hasClass("dark")) {
+                    penColor = 'white';
+                } else {
+                    penColor = 'black';
+                }
+                
+                redrawCanvas();
+            });
+
+            $(".export-btn").click(function(){
+                exportBinaryImage();
+            });
+            
+            function redrawCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                drawingData.forEach(path => {
+                    if (path.length < 2) return;
+                    
+                    ctx.lineWidth = 5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = $("body").hasClass("dark") ? 'white' : 'black';
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(path[0].x, path[0].y);
+                    
+                    for (let i = 1; i < path.length; i++) {
+                        ctx.lineTo(path[i].x, path[i].y);
+                    }
+                    
+                    ctx.stroke();
+                });
+            }
+
+            function exportBinaryImage() {
+                const bounds = findDrawingBounds();
+                if (!bounds) {
+                    alert("No drawing found to export.");
+                    return;
+                }
+                
+                const padding = 30;
+                bounds.minX = Math.max(0, bounds.minX - padding);
+                bounds.minY = Math.max(0, bounds.minY - padding);
+                bounds.maxX = Math.min(canvas.width, bounds.maxX + padding);
+                bounds.maxY = Math.min(canvas.height, bounds.maxY + padding);
+                
+                const width = bounds.maxX - bounds.minX;
+                const height = bounds.maxY - bounds.minY;
+                
+
+                const maxDimension = 128;
+                const aspectRatio = width / height;
+                
+                let exportWidth, exportHeight;
+                if (width > height) {
+                    exportWidth = maxDimension;
+                    exportHeight = Math.round(maxDimension / aspectRatio);
+                } else {
+                    exportHeight = maxDimension;
+                    exportWidth = Math.round(maxDimension * aspectRatio);
+                }
+                
+                exportCanvas.width = exportWidth;
+                exportCanvas.height = exportHeight;
+                
+                exportCtx.fillStyle = "white";
+                exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+                
+                exportCtx.save();
+                
+
+                exportCtx.scale(exportCanvas.width / width, exportCanvas.height / height);
+                exportCtx.translate(-bounds.minX, -bounds.minY);
+                
+
+                exportCtx.lineCap = 'round';
+                exportCtx.lineJoin = 'round';
+                exportCtx.strokeStyle = 'black';
+                
+                // Calculate appropriate line thickness based on canvas size
+                // This ensures lines remain visible when scaled down
+                const scaleFactor = Math.min(exportCanvas.width / width, exportCanvas.height / height);
+                const lineThickness = Math.max(1, 5 * scaleFactor); // Base on original 5px thickness
+                exportCtx.lineWidth = lineThickness;
+                
+                // Draw all paths
+                drawingData.forEach(path => {
+                    if (path.length < 2) return;
+                    
+                    exportCtx.beginPath();
+                    exportCtx.moveTo(path[0].x, path[0].y);
+                    
+                    for (let i = 1; i < path.length; i++) {
+                        exportCtx.lineTo(path[i].x, path[i].y);
+                    }
+                    
+                    exportCtx.stroke();
+                });
+                
+                exportCtx.restore();
+                
+                // Apply proper binary thresholding
+                const imageData = exportCtx.getImageData(0, 0, exportCanvas.width, exportCanvas.height);
+                const data = imageData.data;
+                const threshold = 240; // Higher threshold to better preserve thin lines
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    // Check if pixel is not white
+                    if (data[i] < threshold || data[i+1] < threshold || data[i+2] < threshold) {
+                        // Make it pure black
+                        data[i] = 0;     // R
+                        data[i+1] = 0;   // G
+                        data[i+2] = 0;   // B
+                    } else {
+                        // Make it pure white
+                        data[i] = 255;   // R
+                        data[i+1] = 255; // G
+                        data[i+2] = 255; // B
+                    }
+                    // Keep alpha at full opacity
+                    data[i+3] = 255;     // A
+                }
+                
+                exportCtx.putImageData(imageData, 0, 0);
+                
+                // Get data URL and trigger download
+                const dataUrl = exportCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = 'drawing.png';
+                link.href = dataUrl;
+                link.click();
+            }
+
+            // Function to find the bounds of the drawing
+            function findDrawingBounds() {
+                if (drawingData.length === 0) return null;
+
+                let minX = Infinity;
+                let minY = Infinity;
+                let maxX = -Infinity;
+                let maxY = -Infinity;
+
+                drawingData.forEach(path => {
+                    path.forEach(point => {
+                        minX = Math.min(minX, point.x);
+                        minY = Math.min(minY, point.y);
+                        maxX = Math.max(maxX, point.x);
+                        maxY = Math.max(maxY, point.y);
+                    });
+                });
+
+                return { minX, minY, maxX, maxY };
+            }
+           
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = getX(e) - rect.left;
+                lastY = getY(e) - rect.top;
+                
+                // Start a new path
+                currentPath = [{x: lastX, y: lastY}];
+            }
+           
+            function getX(e){
+                if (e.touches && e.touches.length > 0){
+                    return e.touches[0].clientX;
+                }
+                return e.clientX;
+            }
+           
+            function getY(e){
+                if (e.touches && e.touches.length > 0){
+                    return e.touches[0].clientY;
+                }
+                return e.clientY;
+            }
+           
+            function draw(e) {
+                if (!isDrawing) return;
+               
+                const rect = canvas.getBoundingClientRect();
+                const currentX = getX(e) - rect.left;
+                const currentY = getY(e) - rect.top;
+               
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = penColor;
+               
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+                
+                // Add this point to the current path
+                currentPath.push({x: currentX, y: currentY});
+               
+                lastX = currentX;
+                lastY = currentY;
+            }
+           
+            function stopDrawing() {
+                if (isDrawing) {
+                    // End the current path and save it
+                    if (currentPath.length > 1) {
+                        drawingData.push(currentPath);
+                    }
+                    currentPath = [];
+                }
+                isDrawing = false;
+            }
+           
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+           
+            canvas.addEventListener('touchstart', function(e){
+                e.preventDefault();
+                startDrawing(e);
+            });
+           
+            canvas.addEventListener('touchmove', function(e){
+                e.preventDefault();
+                draw(e);
+            });
+           
+            canvas.addEventListener('touchend', stopDrawing);
+           
+            canvas.addEventListener('pointerdown', startDrawing);
+            canvas.addEventListener('pointermove', draw);
+            canvas.addEventListener('pointerup', stopDrawing);
+            canvas.addEventListener('pointerout', stopDrawing);
+        });
+    </script>
+</body>
+</html>
